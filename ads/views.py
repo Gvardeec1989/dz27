@@ -66,7 +66,7 @@ class CategoryDeleteView(DeleteView):
 
     def delete(self, request, *args, **kwargs):
         super().delete(request, *args, **kwargs)
-        return JsonResponse({"ok"}, status=204)
+        return JsonResponse({}, status=204)
 
 
 class CategoryDetailView(DetailView):
@@ -99,8 +99,8 @@ class AdListView(ListView):
                            "is_published": ad.is_published,
                            "image": ad.image.url
                            })
-            return JsonResponse({'ads': result, 'pages': page_obj.number, 'total': page_obj.paginator.count},
-                                safe=False, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse({'ads': result, 'pages': page_obj.number, 'total': page_obj.paginator.count},
+                            safe=False, json_dumps_params={'ensure_ascii': False})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -121,8 +121,8 @@ class AdCreateView(CreateView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
 
-        author = get_object_or_404(User, id=data['author_id'])
-        category = get_object_or_404(Category, id=data['category_id'])
+        author = get_object_or_404(User, id=data['author'])
+        category = get_object_or_404(Category, id=data['category'])
 
         new_ad = Ad.objects.create(
             name=data['name'],
@@ -160,8 +160,7 @@ class AdUploadImageView(UpdateView):
                              "price": self.object.price,
                              "description": self.object.description,
                              "is_published": self.object.is_published,
-                             "image": self.object.image.url
-                             }, safe=False,
+                             "image": self.object.image.url}, safe=False,
                             json_dumps_params={'ensure_ascii': False})
 
 
@@ -169,12 +168,17 @@ class AdDetailView(DetailView):
     model = Ad
 
     def get(self, request, *args, **kwargs):
-        ad = self.get_object()
-        return JsonResponse({"id": ad.id, "name": ad.name,
-                             "author": ad.author, "price": ad.price,
-                             "description": ad.description, "is_published": ad.is_published}, safe=False,
-                            json_dumps_params={'ensure_ascii': False})
-
+        super().get(request, *args, **kwargs)
+        return JsonResponse({
+            "id": self.object.id,
+            "name": self.object.name,
+            "author_id": self.object.author.id,
+            "price": self.object.price,
+            "description": self.object.description,
+            "is_published": self.object.is_published,
+            "category_id": self.object.category.id,
+            "image": self.object.image.url
+        }, safe=False, json_dumps_params={'ensure_ascii': False})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AdDeleteView(DeleteView):
@@ -202,7 +206,7 @@ class AdUpdateView(UpdateView):
         ad.price = ad_data.get('price')
         ad.description = ad_data.get('description')
         ad.is_published = ad_data.get('is_published')
-        ad.category_id = ad_data.get('category_id')
+        ad.category = ad_data.get('category')
 
         ad.save()
 
@@ -215,7 +219,6 @@ class AdUpdateView(UpdateView):
             'description': ad.description,
             'is_published': ad.is_published,
             'image': ad.image.url if ad.image else None,
-            'category_id': ad.category_id,
             'category': str(ad.category)
         }
 

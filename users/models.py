@@ -14,20 +14,25 @@ class Location(models.Model):
         return self.name
 
 
-class User(models.Model):
-    ROLES = [
-        ('admin', 'администратор'),
-        ('member', 'пользователь'),
-        ('moderator', 'модератор')
-    ]
+class UserRoles:
+    USER = 'member'
+    ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    choices = (
+        ("пользователь", USER),
+        ("админ", ADMIN),
+        ("модератор", MODERATOR)
+    )
 
+
+class User(models.Model):
     first_name = models.CharField(max_length=100, null=True)
     last_name = models.CharField(max_length=150, null=True)
     username = models.CharField(max_length=20, unique=True)
     password = models.CharField(max_length=200)
-    role = models.CharField(max_length=15, choices=ROLES, default='member')
+    role = models.CharField(choices=UserRoles.choices, default='member', max_length=15)
     age = models.SmallIntegerField()
-    location = models.ManyToManyField(Location, on_delete=models.CASCADE, null=True)
+    location = models.ManyToManyField(Location)
 
     class Meta:
         verbose_name = 'Пользователь'

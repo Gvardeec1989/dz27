@@ -2,10 +2,9 @@ import json
 
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 
 from dz27 import settings
 from users.models import User, Location
@@ -13,24 +12,26 @@ from users.models import User, Location
 
 class UserListView(ListView):
     model = User
-    queryset = User.objects.all()
 
     def get(self, request, *args, **kwargs):
         super().get(self, *args, **kwargs)
-        self.object_list = self.object_list.order_by("username")
+        self.object_list = self.object_list.prefetch_related('location').order_by('username')
         paginator = Paginator(object_list=self.object_list, per_page=settings.TOTAL_ON_PAGE)
-        page = request.GET.get('page')
+        page = request.GET.get('page', 1)
         page_obj = paginator.get_page(page)
         result = []
         for user in page_obj:
-            result.append({"id": user.id,
-                           "user": user.username,
-                           "first_name": user.first_name,
-                           "last_name": user.last_name,
-                           "role": user.role,
-                           "ads_count": user.ads.count
-                           })
-            return JsonResponse({'ads': result, 'pages': page_obj.number, 'total': page_obj.paginator.count},
+            result.append({
+                "id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "role": user.role,
+                "age": user.age,
+                "location": list(map(str, user.location.all())),
+                "total_ads": user.ads.count()
+               })
+            return JsonResponse({'ads': result, 'pages': page_obj.number, 'total': self.object_list.count()},
                                 safe=False, json_dumps_params={'ensure_ascii': False})
 
 
@@ -61,8 +62,8 @@ class UserCreateView(CreateView):
                 'last_name': user.last_name,
                 'role': user.role,
                 'age': user.age,
-                'locations': [str(u) for u in user.location.all()]
-        })
+                'location': [u.name for u in user.location.all()],
+        }, safe=False, json_dumps_params={'ensure_ascii': False})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -91,7 +92,6 @@ class UserUpdateView(UpdateView):
             'last_name': user.last_name,
             'role': user.role,
             'age': user.age,
-            'location_id': user.location_id,
             'location': str(user.location)
         }
 
@@ -109,3 +109,19 @@ class UserDeleteView(DeleteView):
 
         return JsonResponse({'status': 'OK'},
                             status=200)
+
+
+class UserDetailView(DetailView):
+    model = User
+
+    def get(self, request, *args, **kwargs):
+        super().get(request, *args, **kwargs)
+        return JsonResponse({
+            "id": self.object.id,
+            "username": self.object.username,
+            "first_name": self.object.first_name,
+            "last_name": self.object.last_name,
+            "role": self.object.role,
+            "age": self.object.age
+        }, safe=False, json_dumps_params={'ensure_ascii': False})
+
