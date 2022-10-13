@@ -97,7 +97,7 @@ class AdListView(ListView):
                            "price": ad.price,
                            "description": ad.description,
                            "is_published": ad.is_published,
-                           "image": ad.image.url
+                           "image": ad.image.url if ad.image else None
                            })
         return JsonResponse({'ads': result, 'pages': page_obj.number, 'total': page_obj.paginator.count},
                             safe=False, json_dumps_params={'ensure_ascii': False})
@@ -106,7 +106,7 @@ class AdListView(ListView):
 @method_decorator(csrf_exempt, name='dispatch')
 class AdCreateView(CreateView):
     model = Ad
-    fields = ['name', 'author', 'price', 'description', 'is_published', ' category']
+    fields = ['name', 'author', 'price', 'description', 'is_published', 'image', 'category']
 
     def get(self, request, *args, **kwargs):
         all_ads = Ad.objects.all()
@@ -138,6 +138,7 @@ class AdCreateView(CreateView):
                              "author": new_ad.author.username,
                              "category": new_ad.category.name,
                              "price": new_ad.price,
+                             'image': new_ad.image.url if new_ad.image else None,
                              "description": new_ad.description,
                              "is_published": new_ad.is_published
                              }, safe=False,
@@ -160,7 +161,7 @@ class AdUploadImageView(UpdateView):
                              "price": self.object.price,
                              "description": self.object.description,
                              "is_published": self.object.is_published,
-                             "image": self.object.image.url}, safe=False,
+                             "image": self.object.image.url if self.object.image else None}, safe=False,
                             json_dumps_params={'ensure_ascii': False})
 
 
@@ -177,8 +178,9 @@ class AdDetailView(DetailView):
             "description": self.object.description,
             "is_published": self.object.is_published,
             "category_id": self.object.category.id,
-            "image": self.object.image.url
+            "image": self.object.image.url if self.object.image else None
         }, safe=False, json_dumps_params={'ensure_ascii': False})
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AdDeleteView(DeleteView):
