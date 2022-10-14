@@ -121,13 +121,13 @@ class AdCreateView(CreateView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
 
-        author = get_object_or_404(User, id=data['author'])
-        category = get_object_or_404(Category, id=data['category'])
+        author_id = get_object_or_404(User, id=data['author'])
+        category_id = get_object_or_404(Category, id=data['category'])
 
         new_ad = Ad.objects.create(
             name=data['name'],
-            author=author,
-            category=category,
+            author=author_id,
+            category=category_id,
             price=data['price'],
             description=data['description'],
             is_published=data['is_published'] if 'is_published' in data else False
