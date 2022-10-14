@@ -28,7 +28,7 @@ class UserRoles:
 class User(models.Model):
     first_name = models.CharField(max_length=100, null=True)
     last_name = models.CharField(max_length=150, null=True)
-    username = models.CharField(max_length=20, unique=True)
+    username = models.CharField(max_length=20)
     password = models.CharField(max_length=200)
     role = models.CharField(choices=UserRoles.choices, default='member', max_length=15)
     age = models.SmallIntegerField()
